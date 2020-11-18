@@ -7,4 +7,82 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(palmerpenguins)
+library(ggpubr)
+library(broom)
 ```
+
+## Looking at our sample data
+First, we're making mock unpaired data by creating two sample vectors using the set.seed() function.
+
+```{r}
+set.seed(1414)
+gp_1 <- sample.int(20, size = 15, replace = TRUE)
+
+# set.seed is to create a "pseudorandom" sample
+
+set.seed(1424)
+gp_2 <- sample.int(30, size = 15, replace = TRUE)
+```
+
+Is there evidence for significant difference in ranks between the populations that these two groups were drawn from?
+
+```{r}
+hist(gp_1)
+
+hist(gp_2)
+```
+
+The histograms show a not clearly normally distribution, and the sample size is small. So, using a median-based test is probably good to compare these data. 
+
+
+## Mann-Whitney U Test
+We are performing a Mann-Whitney U test to see if there is significant difference between the group medians.
+
+```{r}
+my_mwu <- wilcox.test(gp_1, gp_2)
+```
+
+The p-value is 0.28, which means that if the null hypothesis is true, there is a probability of 28% that we could have found median values at least this different by chance. 
+This is not sufficient evidence to reject the null hypothesis (samples were drawn from populations with the same median) if we use the significance level = 0.05.
+
+Note to use ?kruskal.test for info about a rank-based test for comparing medians across >2 groups.
+
+## Simple linear regression
+First, we make an exploratory scatterplot to compare penguin flipper length vs body mass.
+
+```{r}
+ggplot(data = penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point()
+```
+
+Looking at this data, we can see there is a linear relationship, so it makes sense to move forward with our test.
+
+### Model it
+Model the data using lm().
+
+```{r}
+penguin_lm <- lm(body_mass_g ~ flipper_length_mm, data = penguins)
+
+summary(penguin_lm)
+```
+
+The R^2 value is 0.759 so 75.9% of variance in body mass is explained by flipper length.
+
+Next, we can use broom::tidy() to get model outputs in nice data frame format. 
+
+```{r}
+penguin_lm_tidy <- broom::tidy(penguin_lm)
+
+penguin_int <- penguin_lm_tidy$estimate[1] # this is to get just the intercept
+
+penguin_coef <- penguin_lm_tidy$estimate[2]
+
+penguin_lm_out <- broom::glance(penguin_lm) # this is to look at the stats more easily 
+penguin_lm_out
+```
+
+Simple linear regression was used to explore the relationship between penguin flipper length (mm) and body mass (g) across all three penguin species, and including both male and female penguins. A significant regression model was found ($\beta$ = `r round(penguin_coef,3)`, F(`r penguin_lm_out$df`,`r penguin_lm_out$df.residual`) = `r round(penguin_lm_out$statistic,1)`, p < 0.001) with an R^2^ of `r round(penguin_lm_out$r.squared,3)`.
+
+## Explore model assumptions
