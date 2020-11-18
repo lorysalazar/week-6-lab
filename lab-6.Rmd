@@ -86,3 +86,36 @@ penguin_lm_out
 Simple linear regression was used to explore the relationship between penguin flipper length (mm) and body mass (g) across all three penguin species, and including both male and female penguins. A significant regression model was found ($\beta$ = `r round(penguin_coef,3)`, F(`r penguin_lm_out$df`,`r penguin_lm_out$df.residual`) = `r round(penguin_lm_out$statistic,1)`, p < 0.001) with an R^2^ of `r round(penguin_lm_out$r.squared,3)`.
 
 ## Explore model assumptions
+
+```{r}
+plot(penguin_lm) # base R command (?) to get a bunch of plots
+```
+
+Interpreting these plots...
+
+- **The first one**: fitted values vs. residuals 
+- **The second one**: QQ-plot for residuals 
+- **The third one**: another way of looking at fitted vs. residuals (these are just standardized residuals, but you can interpret it the same way)
+- **The fourth one**: Cook's distance, a measure of "influence" or "leverage" that individual points have on the model - often considered a way to explore outliers.
+
+## Visualize the model 
+Now that we have explored the assumptions and decided liner regression is a valid tool to use for this data, let's look at the model.
+
+```{r}
+ggplot(data = penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm",
+              color = "red",
+              size = 0.5,
+              fill = "gray10",
+              alpha = 0.5) + # geom_smooth is to add a linear model to a scatterplot
+  theme_light() +
+  ggpubr::stat_regline_equation(label.x = 180, label.y = 5700) # adds the equation to the plot and labels it
+```
+
+## Find Person's r for correlation
+
+```{r}
+penguins_cor <- cor.test(penguins$flipper_length_mm, penguins$body_mass_g) # will report the r value which tells us if flipper length and body mass are correlated
+```
+The r value is 0.87. There is a strong positive correlation between the penguin flipper length and body mass. 
